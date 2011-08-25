@@ -198,6 +198,46 @@ class TestPangler(unittest.TestCase):
         p3.trigger(event='test')
         self.assertEqual(self.fired, 3)
 
+    def test_pretriggers(self):
+        self.triggered = []
+        self.fired = 0
+
+        def pretrigger1(event):
+            self.triggered.append(event)
+
+        def pretrigger2(event):
+            self.fired += 1
+
+        p = panglery.Pangler()
+        p.pretriggers.append(pretrigger1)
+        p.pretriggers.append(pretrigger2)
+
+        p.trigger(event='test1')
+        p.trigger(event='test2', foo='bar')
+
+        self.assertEqual(self.triggered, [{'event' : 'test1'},
+                                          {'event' : 'test2', 'foo' : 'bar'}])
+        self.assertEqual(self.fired, 2)
+
+    def test_combining_pretriggers(self):
+        self.fired = 0
+
+        p = panglery.Pangler()
+        def pretrigger1(event):
+            self.fired |= 1
+
+        p.pretriggers.append(pretrigger1)
+
+        p2 = panglery.Pangler()
+        def pretrigger2(event):
+            self.fired |= 2
+
+        p2.pretriggers.append(pretrigger2)
+
+        p3 = p.combine(p2)
+        p3.trigger(event='test')
+        self.assertEqual(self.fired, 3)
+
 class TestPanglerAggregate(unittest.TestCase):
     def test_subclass_binding(self):
         self.fired = 0

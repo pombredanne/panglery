@@ -42,6 +42,7 @@ class Pangler(object):
         self.id = id
         self.hooks = []
         self.instance = None
+        self.pretriggers = []
 
     def subscribe(self, _func=None, needs=(), returns=(), modifies=(),
             **conditions):
@@ -92,6 +93,8 @@ class Pangler(object):
 
         if not event:
             raise ValueError("tried to trigger nothing")
+        for pretrigger in self.pretriggers:
+            pretrigger(event)
         for hook in self.hooks:
             if hook.matches(event):
                 hook.execute(self, event)
@@ -100,14 +103,15 @@ class Pangler(object):
         """Duplicate a Pangler.
 
         Returns a copy of this Pangler, with all the same state. Both will be
-        bound to the same instance and have the same `id`, but new hooks will
-        not be shared.
+        bound to the same instance and have the same `id`, but new hooks and
+        pretriggers will not be shared.
 
         """
 
         p = type(self)(self.id)
         p.hooks = list(self.hooks)
         p.instance = self.instance
+        p.pretriggers = list(self.pretriggers)
         return p
 
     def combine(self, *others):
@@ -115,14 +119,15 @@ class Pangler(object):
 
         Returns a copy of this Pangler with all of the hooks from the provided
         Panglers added to it as well. The new Pangler will be bound to the same
-        instance and have the same `id`, but new hooks will not be shared with
-        this Pangler or any provided Panglers.
+        instance and have the same `id`, but new hooks and pretriggers will not
+        be shared with this Pangler or any provided Panglers.
 
         """
 
         p = self.clone()
         for other in others:
             p.hooks.extend(other.hooks)
+            p.pretriggers.extend(other.pretriggers)
         return p
 
     def bind(self, instance):
@@ -130,7 +135,7 @@ class Pangler(object):
 
         Returns a clone of this Pangler, with the only difference being that
         the new Pangler is bound to the provided instance. Both will have the
-        same `id`, but new hooks will not be shared.
+        same `id`, but new hooks and pretriggers will not be shared.
 
         """
 
