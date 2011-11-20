@@ -8,6 +8,9 @@ import weakref
 
 _DEFAULT_ID = object()
 
+class NoSuchHook(Exception):
+    pass
+
 class Pangler(object):
     """A pangler.
 
@@ -77,6 +80,25 @@ class Pangler(object):
             deco(_func)
         else:
             return deco
+
+    def unsubscribe(self, func, **conditions):
+        """Unsubscribe a previously subscribed hook from a pangler.
+
+        * The keyword arguments should match the predicates that were used when
+          subscribing. Only hooks that match will be unsubscribed.
+
+        """
+
+        was = len(self.hooks)
+        self.hooks = [
+            h for h in self.hooks if h.func != func or
+            h.conditions != conditions
+        ]
+
+        if len(self.hooks) == was:
+            raise NoSuchHook(
+                "'%s' was not subscribed with the given conditions." % func
+            )
 
     @functools.wraps(subscribe)
     def add_hook(self, *a, **kw):

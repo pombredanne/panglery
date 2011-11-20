@@ -60,6 +60,23 @@ class TestPangler(unittest.TestCase):
         p.trigger(foo=3)
         self.assert_(self.fired)
 
+    def test_unsubscribe(self):
+        p = panglery.Pangler()
+        self.fired = False
+
+        @p.subscribe(event='test')
+        def test_hook(p):
+            self.fired = True
+
+        p.unsubscribe(test_hook, event='test')
+        p.trigger(event='test')
+        self.assertFalse(self.fired)
+
+    def test_unsubscribe_no_such_subscriber(self):
+        p = panglery.Pangler()
+        self.assertRaises(
+            panglery.pangler.NoSuchHook, p.unsubscribe, lambda : None)
+
     def test_binding(self):
         self.fired = False
         class TestClass(object):
